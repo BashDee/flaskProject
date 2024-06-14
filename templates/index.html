@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Assessment Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #EDE8F5;
+        }
+        .container { max-width: 500px; margin: auto; }
+        .result { margin-top: 20px; font-weight: bold; }
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            display: none;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Password Strength Assessment Tool</h2>
+        <form id="passwordForm">
+            <label for="password">Enter Password:</label><br>
+            <input type="" id="password" name="password" required><br><br>
+            <input type="submit" value="Check Password">
+        </form>
+        <div class="loader" id="loader"></div>
+        <div class="result" id="strengthResult"></div>
+        <div class="result" id="dictionaryResult"></div>
+        <div class="result" id="bruteForceResult"></div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            $('#passwordForm').on('submit', function(event) {
+                event.preventDefault();
+                var password = $('#password').val();
+
+                // Show loader
+                $('#loader').show();
+                $('#strengthResult').text('');
+                $('#dictionaryResult').text('');
+                $('#bruteForceResult').text('');
+
+                // Check password strength
+                $.ajax({
+                    type: 'POST',
+                    url: '/check_strength',
+                    data: { password: password },
+                    success: function(response) {
+                        $('#strengthResult').text('Password Strength: ' + response.strength);
+
+                        // Check dictionary attack
+                        $.ajax({
+                            type: 'POST',
+                            url: '/dictionary_attack',
+                            data: { password: password },
+                            success: function(response) {
+                                $('#dictionaryResult').text(response.result);
+
+                                // Check brute force attack
+                                $.ajax({
+                                    type: 'POST',
+                                    url: '/brute_force_attack',
+                                    data: { password: password },
+                                    success: function(response) {
+                                        $('#bruteForceResult').text(response.result);
+                                        // Hide loader
+                                        $('#loader').hide();
+                                    },
+                                    error: function() {
+                                        $('#bruteForceResult').text('Error during brute force attack.');
+                                        $('#loader').hide();
+                                    }
+                                });
+                            },
+                            error: function() {
+                                $('#dictionaryResult').text('Error during dictionary attack.');
+                                $('#loader').hide();
+                            }
+                        });
+                    },
+                    error: function() {
+                        $('#strengthResult').text('Error checking password strength.');
+                        $('#loader').hide();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
